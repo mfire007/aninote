@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ANINOTE PLATINUM V15</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.294.0/dist/umd/lucide.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <!-- Google API -->
+    <script src="https://accounts.google.com/gsi/client"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+
+    <style>
+        :root {
+            --p-bg: #000000;
+            --p-accent: #ffffff;
+            --p-panel: rgba(15, 15, 18, 0.85);
+            --p-card: rgba(255, 255, 255, 0.05);
+            --p-blur: 25px;
+            --p-border: rgba(255, 255, 255, 0.1);
+            --c-blue: #007AFF; 
+            --c-yellow: #FFD60A; 
+            --c-green: #32D74B; 
+            --c-red: #FF453A;
+            --toast-bg: rgba(20, 20, 25, 0.9);
+            --google-blue: #4285F4;
+            --google-red: #EA4335;
+            --google-yellow: #FBBC05;
+            --google-green: #34A853;
+        }
+        /* --- ОРИГИНАЛЬНЫЕ СТИЛИ ПОЛНОСТЬЮ СОХРАНЕНЫ --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif !important; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--p-bg); color: #fff; height: 100vh; overflow: hidden; position: relative; }
+
+        /* --- АНИМАЦИИ --- */
+        @keyframes pulse-hit {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); border-color: var(--p-accent); }
+            100% { transform: scale(1); }
+        }
+        .hit-anim { animation: pulse-hit 0.3s ease; }
+
+        @keyframes circle-complete {
+            0% { box-shadow: 0 0 0 0 rgba(255, 214, 10, 0.7); }
+            50% { box-shadow: 0 0 0 20px rgba(255, 214, 10, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 214, 10, 0); }
+        }
+        .new-circle-anim { animation: circle-complete 0.8s ease; }
+
+        @keyframes confetti {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-100px) rotate(720deg); opacity: 0; }
+        }
+        .confetti-particle {
+            position: fixed; width: 8px; height: 8px; background: var(--c-yellow); border-radius: 50%;
+            pointer-events: none; z-index: 9999; animation: confetti 1.5s ease-out forwards;
+        }
+
+        /* --- ЛОУДЕР --- */
+        @keyframes loader-spin { 
+            0% { transform: rotate(0deg); stroke-dashoffset: 280; }
+            50% { stroke-dashoffset: 70; transform: rotate(180deg); }
+            100% { transform: rotate(360deg); stroke-dashoffset: 280; }
+        }
+        @keyframes loader-fade-in {
+            from { opacity: 0; transform: scale(0.9); filter: blur(10px); }
+            to { opacity: 1; transform: scale(1); filter: blur(0); }
+        }
+        #loader-wrapper {
+            position: fixed; inset: 0; z-index: 999999; background-color: #000; 
+            display: flex; justify-content: center; align-items: center;
+            transition: opacity 0.8s cubic-bezier(0.65, 0, 0.35, 1), transform 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+        }
+        .loader-content { 
+            display: flex; flex-direction: column; align-items: center; gap: 30px; 
+            animation: loader-fade-in 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .loader-visual { position: relative; width: 100px; height: 100px; display: flex; justify-content: center; align-items: center; }
+        .loader-svg { position: absolute; width: 100%; height: 100%; }
+        .loader-svg circle {
+            fill: none; stroke-width: 3; stroke-linecap: round; stroke: var(--p-accent);
+            stroke-dasharray: 283; transform-origin: 50% 50%; animation: loader-spin 2s ease-in-out infinite;
+        }
+        .loader-svg circle.bg-ring { stroke: rgba(255, 255, 255, 0.05); animation: none; stroke-dashoffset: 0; }
+        .loader-logo-inner { color: #fff; z-index: 2; filter: drop-shadow(0 0 10px rgba(255,255,255,0.3)); }
+        .loader-text-wrap { text-align: center; }
+        .loader-title { font-weight: 800; letter-spacing: 8px; font-size: 0.8rem; color: #fff; margin-bottom: 8px; text-transform: uppercase; }
+        .loader-version { font-size: 0.6rem; font-weight: 800; color: var(--p-accent); opacity: 0.4; letter-spacing: 2px; }
+        .loader-finish { opacity: 0 !important; transform: scale(1.05); pointer-events: none; }
+
+        /* --- ЭКРАН ВХОДА В GOOGLE (поверх основного) --- */
+        .google-auth-screen {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 1000000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            backdrop-filter: blur(20px);
+        }
+        .google-auth-card {
+            background: rgba(20, 25, 30, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 40px;
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+            backdrop-filter: blur(20px);
+            text-align: center;
+        }
+        .google-logo {
+            display: flex; justify-content: center; gap: 8px; margin-bottom: 30px;
+        }
+        .google-logo span {
+            width: 30px; height: 30px; border-radius: 50%;
+        }
+        .google-logo span:nth-child(1) { background: var(--google-blue); }
+        .google-logo span:nth-child(2) { background: var(--google-red); }
+        .google-logo span:nth-child(3) { background: var(--google-yellow); }
+        .google-logo span:nth-child(4) { background: var(--google-green); }
+        .google-auth-title { font-size: 24px; font-weight: 800; margin-bottom: 10px; letter-spacing: 2px; }
+        .google-auth-subtitle { font-size: 14px; opacity: 0.6; margin-bottom: 40px; }
+        .google-auth-btn {
+            width: 100%; background: #fff; color: #000; border: none; padding: 18px; border-radius: 30px;
+            font-weight: 800; font-size: 16px; cursor: pointer; display: flex; align-items: center;
+            justify-content: center; gap: 10px; transition: 0.3s; margin-bottom: 20px;
+        }
+        .google-auth-btn:active { transform: scale(0.96); }
+        .google-auth-footer { font-size: 12px; opacity: 0.4; }
+
+        /* --- БЭКГРАУНД --- */
+        #bg-layer { position: fixed; inset: 0; background-size: cover; background-position: center; z-index: -2; transition: 0.8s ease; }
+        .bg-dim { position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(var(--p-blur)); -webkit-backdrop-filter: blur(var(--p-blur)); z-index: -1; }
+
+        /* --- OLED РЕЖИМ --- */
+        body.oled-mode {
+            --p-bg: #000000 !important;
+            --p-panel: #000000 !important;
+            --p-card: #000000 !important;
+            --p-blur: 0px !important;
+            --p-border: rgba(255, 255, 255, 0.2) !important;
+        }
+        body.oled-mode .bg-dim, body.oled-mode #bg-layer { display: none !important; }
+        body.oled-mode .card, body.oled-mode .app-header, body.oled-mode .sheet { border: 1px solid var(--p-border); }
+
+        /* --- ШАПКА --- */
+        .app-header { 
+            position: fixed; top: 0; width: 100%; z-index: 100; 
+            background: var(--p-panel); border-bottom: 0.5px solid var(--p-border); 
+            padding-top: env(safe-area-inset-top); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); 
+        }
+        .h-wrap { max-width: 600px; margin: 0 auto; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .logo-box { display: flex; align-items: center; gap: 10px; }
+        .logo-box b { font-weight: 800; letter-spacing: 3px; font-size: 0.9rem; text-transform: uppercase; }
+        
+        .h-actions { display: flex; gap: 12px; align-items: center; }
+        .btn-icon { width: 40px; height: 40px; border-radius: 14px; border: 1px solid var(--p-border); background: rgba(255,255,255,0.05); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .btn-add { background: var(--p-accent); color: #000; border: none; width: 40px; height: 40px; border-radius: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        
+        .drive-status-badge {
+            background: rgba(66, 133, 244, 0.2);
+            border: 1px solid var(--p-border);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 10px;
+            font-weight: 800;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+        .drive-status-badge.online { background: rgba(52, 168, 83, 0.2); color: #34A853; }
+        .drive-status-badge.offline { background: rgba(255, 255, 255, 0.1); color: rgba(255,255,255,0.5); }
+        .drive-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .drive-dot.online { background: #34A853; box-shadow: 0 0 10px #34A853; }
+        .drive-dot.offline { background: rgba(255,255,255,0.3); }
+        .drive-dot.sync { background: var(--c-yellow); animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        /* --- ФИЛЬТРЫ --- */
+        .filters { display: flex; gap: 8px; max-width: 600px; margin: 0 auto; padding: 10px 20px 15px; overflow-x: auto; scrollbar-width: none; }
+        .filters::-webkit-scrollbar { display: none; }
+        .f-item { flex: 1; min-width: 100px; padding: 12px; border-radius: 14px; font-size: 0.65rem; font-weight: 800; text-align: center; background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.3); transition: 0.3s; border: 1px solid transparent; cursor: pointer; }
+        .f-item.active { color: #fff; border-color: var(--p-border); }
+        .f-item.active[data-f="watching"] { background: var(--c-blue); box-shadow: 0 4px 15px rgba(0, 122, 255, 0.3); }
+        .f-item.active[data-f="waiting"] { background: var(--c-yellow); color: #000; box-shadow: 0 4px 15px rgba(255, 214, 10, 0.3); }
+        .f-item.active[data-f="watched"] { background: var(--c-green); color: #000; box-shadow: 0 4px 15px rgba(50, 215, 75, 0.3); }
+
+        /* --- СПИСОК --- */
+        .scroll-view { height: 100vh; overflow-y: auto; padding: 160px 20px 100px; }
+        .list-grid { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+        
+        .card { 
+            background: var(--p-card); border: 1px solid var(--p-border); border-radius: 24px; 
+            display: flex; align-items: center; gap: 16px; position: relative; overflow: hidden; 
+            backdrop-filter: blur(10px); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease; 
+            min-height: 80px; touch-action: pan-y; 
+        }
+        .card.locked { opacity: 0.5; filter: grayscale(0.5); transform: scale(0.97); }
+        .card.locked .card-info, .card.locked .btn-sm:not(.btn-lock) { pointer-events: none; }
+
+        .status-indicator { width: 6px; height: 50px; border-radius: 0 4px 4px 0; flex-shrink: 0; }
+        .watching .status-indicator { background: var(--c-blue); }
+        .waiting .status-indicator { background: var(--c-yellow); }
+        .watched .status-indicator { background: var(--c-green); }
+
+        .card-info { flex: 1; padding: 18px 0; cursor: pointer; min-width: 0; }
+        .card-info h3 { 
+            font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; line-height: 1.3;
+            word-wrap: break-word; overflow-wrap: break-word; display: -webkit-box;
+            -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+        }
+        .card-info p { font-size: 0.7rem; font-weight: 800; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .progress-track { width: 100%; height: 2px; background: rgba(255,255,255,0.1); margin-top: 8px; border-radius: 2px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--p-accent); transition: width 0.6s cubic-bezier(0.23, 1, 0.32, 1); }
+
+        .card-btns { display: flex; gap: 8px; padding-right: 18px; align-items: center; }
+        .btn-sm { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--p-border); background: rgba(255,255,255,0.04); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+        .btn-sm.main { background: var(--p-accent); color: #000; border: none; }
+        .btn-lock { transition: 0.3s; color: rgba(255,255,255,0.2); pointer-events: auto !important; }
+        .card.locked .btn-lock { color: var(--c-green); }
+
+        /* --- ПАНЕЛИ --- */
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: none; align-items: flex-end; justify-content: center; backdrop-filter: blur(10px); opacity: 0; transition: 0.3s; }
+        .overlay.show { display: flex; opacity: 1; }
+        .sheet { 
+            width: 100%; max-width: 550px; background: var(--p-panel); border-radius: 35px 35px 0 0; 
+            padding: 15px 25px 40px; border-top: 1px solid var(--p-border); 
+            transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+            max-height: 90vh; overflow-y: auto; 
+        }
+        .overlay.show .sheet { transform: translateY(0); }
+        .drag-bar { width: 45px; height: 5px; background: rgba(255,255,255,0.15); border-radius: 10px; margin: 0 auto 25px; }
+
+        .setting-block { margin-bottom: 24px; }
+        .setting-block label { display: block; font-size: 0.65rem; font-weight: 800; opacity: 0.5; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 1px; }
+        
+        .color-row { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+        .color-dot { width: 42px; height: 42px; border-radius: 50%; border: 3px solid transparent; flex-shrink: 0; cursor: pointer; transition: 0.2s; }
+        .color-dot.active { border-color: #fff; transform: scale(1.1); }
+        
+        .input-box { width: 100%; background: rgba(255,255,255,0.06); border: 1px solid var(--p-border); border-radius: 18px; padding: 18px; color: #fff; font-size: 0.9rem; font-weight: 600; outline: none; margin-bottom: 15px; transition: 0.3s; }
+        .input-box:focus { border-color: var(--p-accent); background: rgba(255,255,255,0.1); }
+        
+        .step-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .step-card { background: rgba(255,255,255,0.04); border-radius: 22px; padding: 12px; border: 1px solid var(--p-border); display: flex; justify-content: space-between; align-items: center; }
+        
+        .btn-action { width: 100%; background: #fff; color: #000; padding: 18px; border-radius: 18px; border: none; font-weight: 800; font-size: 0.9rem; cursor: pointer; margin-top: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .info-item { background: rgba(255,255,255,0.03); border: 1px solid var(--p-border); border-radius: 20px; padding: 16px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; }
+        .info-item i { color: var(--p-accent); opacity: 0.8; }
+        .info-item span { font-size: 0.65rem; font-weight: 800; opacity: 0.4; text-transform: uppercase; letter-spacing: 1px; }
+        .info-item b { font-size: 1rem; font-weight: 800; }
+
+        .dev-btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 5px; }
+        .dev-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--p-border); border-radius: 12px; padding: 12px; color: #fff; font-size: 0.7rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.3s; }
+        .dev-btn:active { transform: scale(0.95); background: rgba(255,255,255,0.1); }
+        .dev-btn.active { background: var(--c-blue); border-color: var(--c-blue); }
+
+        /* --- TOAST --- */
+        #toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 5000; display: flex; flex-direction: column; gap: 12px; pointer-events: none; width: 90%; max-width: 380px; }
+        .toast { 
+            background: var(--toast-bg); border: 1px solid var(--p-border); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            padding: 16px 20px; border-radius: 22px; color: #fff; font-size: 0.85rem; font-weight: 700; 
+            transform: translateY(100px) scale(0.9); opacity: 0; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            display: flex; align-items: center; gap: 15px; box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            position: relative; overflow: hidden;
+        }
+        .toast.show { transform: translateY(0) scale(1); opacity: 1; }
+        .toast-icon { width: 34px; height: 34px; border-radius: 12px; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; color: var(--p-accent); flex-shrink: 0; }
+        .toast-progress { position: absolute; bottom: 0; left: 0; height: 3px; background: var(--p-accent); width: 100%; transition: width 3s linear; }
+        
+        /* --- МОДАЛКА --- */
+        #modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 20px; opacity: 0; transition: 0.3s; }
+        #modal-overlay.show { display: flex; opacity: 1; }
+        .modal-card { background: var(--p-panel); border: 1px solid var(--p-border); border-radius: 30px; padding: 30px; width: 100%; max-width: 400px; text-align: center; transform: scale(0.9); transition: 0.3s; }
+        #modal-overlay.show .modal-card { transform: scale(1); }
+        .modal-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 10px; }
+        .modal-text { font-size: 0.9rem; opacity: 0.6; margin-bottom: 25px; line-height: 1.5; }
+        .modal-btns { display: flex; gap: 10px; }
+        .modal-btn { flex: 1; padding: 15px; border-radius: 15px; border: none; font-weight: 800; cursor: pointer; }
+        .btn-cancel { background: rgba(255,255,255,0.1); color: #fff; }
+        .btn-confirm { background: var(--c-red); color: #fff; }
+
+        input[type="range"] { -webkit-appearance: none; width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 5px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; background: #fff; border-radius: 50%; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div id="loader-wrapper">
+    <div class="loader-content">
+        <div class="loader-visual">
+            <svg class="loader-svg" viewBox="0 0 100 100">
+                <circle class="bg-ring" cx="50" cy="50" r="45"></circle>
+                <circle cx="50" cy="50" r="45"></circle>
+            </svg>
+            <div class="loader-logo-inner">
+                <i data-lucide="zap" size="38" fill="currentColor"></i>
+            </div>
+        </div>
+        <div class="loader-text-wrap">
+            <div class="loader-title">ANINOTE PLATINUM</div>
+            <div class="loader-version">DRIVE EDITION</div>
+        </div>
+    </div>
+</div>
+
+<!-- ЭКРАН ВХОДА В GOOGLE (показывается при клике на Drive) -->
+<div id="google-auth-screen" class="google-auth-screen">
+    <div class="google-auth-card">
+        <div class="google-logo">
+            <span></span><span></span><span></span><span></span>
+        </div>
+        <div class="google-auth-title">Google Drive</div>
+        <div class="google-auth-subtitle">Войдите чтобы синхронизировать данные</div>
+        
+        <button class="google-auth-btn" id="google-signin-btn">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' width='24' height='24'%3E%3Cpath fill='%23FFC107' d='M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z' /%3E%3Cpath fill='%23FF3D00' d='M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z' /%3E%3Cpath fill='%234CAF50' d='M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z' /%3E%3Cpath fill='%231976D2' d='M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z' /%3E%3C/svg%3E" alt="Google">
+            ВОЙТИ ЧЕРЕЗ GOOGLE
+        </button>
+        
+        <div class="google-auth-switch" onclick="closeGoogleAuth()" style="cursor: pointer; opacity: 0.7; font-size: 14px; margin-top: 20px;">
+            ПРОДОЛЖИТЬ БЕЗ ОБЛАКА
+        </div>
+    </div>
+</div>
+
+<div id="toast-container"></div>
+
+<div id="modal-overlay">
+    <div class="modal-card">
+        <div class="modal-title">УДАЛИТЬ ТАЙТЛ?</div>
+        <div class="modal-text">Это действие нельзя будет отменить. Данные о просмотренном аниме будут стерты.</div>
+        <div class="modal-btns">
+            <button class="modal-btn btn-cancel" onclick="closeModal()">ОТМЕНА</button>
+            <button class="modal-btn btn-confirm" id="modal-confirm-btn">УДАЛИТЬ</button>
+        </div>
+    </div>
+</div>
+
+<div id="bg-layer"></div>
+<div class="bg-dim"></div>
+
+<header class="app-header">
+    <div class="h-wrap">
+        <div class="logo-box">
+            <i data-lucide="zap" size="22" fill="currentColor"></i>
+            <b>ANINOTE 15</b>
+        </div>
+        <div class="h-actions">
+            <!-- СТАТУС DRIVE -->
+            <div class="drive-status-badge offline" id="drive-badge" onclick="openGoogleAuth()">
+                <span class="drive-dot offline" id="drive-dot"></span>
+                <span id="drive-status-text">DRIVE</span>
+            </div>
+            <button class="btn-icon" onclick="openUI('info')"><i data-lucide="bar-chart-3" size="20"></i></button>
+            <button class="btn-icon" onclick="openUI('studio')"><i data-lucide="palette" size="20"></i></button>
+            <button class="btn-add" onclick="openUI('add')"><i data-lucide="plus" size="24"></i></button>
+        </div>
+    </div>
+    <div class="filters">
+        <div class="f-item active" data-f="watching" onclick="setFilter('watching')">СМОТРЮ</div>
+        <div class="f-item" data-f="waiting" onclick="setFilter('waiting')">ОЖИДАНИЕ</div>
+        <div class="f-item" data-f="watched" onclick="setFilter('watched')">АРХИВ</div>
+    </div>
+</header>
+
+<main class="scroll-view">
+    <div class="list-grid" id="main-list"></div>
+</main>
+
+<div class="overlay" id="ui-overlay" onclick="if(event.target.id==='ui-overlay')closeUI()">
+    <div class="sheet" id="ui-sheet"></div>
+</div>
+
+<input type="file" id="bg-picker" hidden accept="image/*">
+
+<script>
+    // ==================== ⚠️ ТВОИ КЛЮЧИ GOOGLE ⚠️ ====================
+    const GOOGLE_CLIENT_ID = '1067365210548-vcuks3u9rsvvna5f9t8dutj5grbl6iur.apps.googleusercontent.com';
+    const GOOGLE_API_KEY = 'AIzaSyDummyKeyForExample123456';
+    const APP_FILE_NAME = 'aninote_data.json';
+
+    // ==================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ====================
+    let db = JSON.parse(localStorage.getItem('at_db_v6')) || [];
+    let config = JSON.parse(localStorage.getItem('at_cfg_v6')) || { 
+        accent: '#ffffff', 
+        panel: 'rgba(15, 15, 18, 0.85)', 
+        blur: 25,
+        oled: false 
+    };
+    
+    let filter = 'watching';
+    let editId = null;
+    let sVal = 1, eVal = 1, stVal = 'watching';
+
+    // ==================== DRIVE ПЕРЕМЕННЫЕ ====================
+    let driveAuthorized = false;
+    let driveUser = null;
+    let driveAccessToken = null;
+    let driveFileId = localStorage.getItem('drive_file_id') || null;
+    let syncQueue = JSON.parse(localStorage.getItem('drive_sync_queue')) || []; // Очередь изменений
+    let isSyncing = false;
+
+    // DOM элементы
+    const googleAuthScreen = document.getElementById('google-auth-screen');
+    const driveBadge = document.getElementById('drive-badge');
+    const driveDot = document.getElementById('drive-dot');
+    const driveStatusText = document.getElementById('drive-status-text');
+    const loaderWrapper = document.getElementById('loader-wrapper');
+
+    // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+    (function initLoader() {
+        const sessionKey = 'aninote_reload_v15';
+        const savedBg = localStorage.getItem('at_bg_v6');
+        
+        if(savedBg) loaderWrapper.style.backgroundImage = `url(${savedBg})`;
+        
+        if (!sessionStorage.getItem(sessionKey)) { 
+            sessionStorage.setItem(sessionKey, 'done'); 
+            location.reload(); 
+            return; 
+        }
+
+        window.addEventListener('load', () => {
+            if(window.lucide) lucide.createIcons();
+            setTimeout(() => { 
+                loaderWrapper.classList.add('loader-finish'); 
+                setTimeout(() => loaderWrapper.style.display = 'none', 800); 
+            }, 1800);
+        });
+    })();
+
+    // Инициализация Google API
+    function initGoogleAPI() {
+        google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: handleGoogleCredentialResponse,
+            auto_select: false,
+            cancel_on_tap_outside: true
+        });
+
+        gapi.load('client', async () => {
+            await gapi.client.init({
+                apiKey: GOOGLE_API_KEY,
+                discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
+            });
+        });
+
+        document.getElementById('google-signin-btn').addEventListener('click', () => {
+            google.accounts.id.prompt();
+        });
+    }
+
+    // Обновление статуса Drive в шапке
+    function updateDriveStatus() {
+        if (driveAuthorized) {
+            driveBadge.className = 'drive-status-badge online';
+            driveDot.className = 'drive-dot online';
+            driveStatusText.textContent = driveUser?.email?.split('@')[0] || 'DRIVE';
+        } else {
+            driveBadge.className = 'drive-status-badge offline';
+            driveDot.className = 'drive-dot offline';
+            driveStatusText.textContent = 'DRIVE';
+        }
+        
+        if (syncQueue.length > 0) {
+            driveDot.className = 'drive-dot sync';
+        }
+    }
+
+    // Показать экран входа в Google
+    function openGoogleAuth() {
+        googleAuthScreen.style.display = 'flex';
+    }
+
+    function closeGoogleAuth() {
+        googleAuthScreen.style.display = 'none';
+    }
+
+    // Обработчик ответа от Google
+    async function handleGoogleCredentialResponse(response) {
+        if (!response.credential) {
+            showToast('Ошибка авторизации', 'alert-circle');
+            return;
+        }
+
+        driveAccessToken = response.credential;
+        gapi.client.setToken({ access_token: response.credential });
+
+        try {
+            const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { 'Authorization': `Bearer ${response.credential}` }
+            });
+            
+            if (!userInfoResponse.ok) throw new Error('Failed to get user info');
+            
+            driveUser = await userInfoResponse.json();
+            driveAuthorized = true;
+            
+            closeGoogleAuth();
+            updateDriveStatus();
+            
+            // Ищем файл в Drive
+            await findDriveFile();
+            
+            // Синхронизируем данные (объединяем локальные и из Drive)
+            await syncWithDrive();
+
+            showToast(`Drive: ${driveUser.email}`, 'cloud');
+
+        } catch (error) {
+            console.error('Auth error:', error);
+            showToast('Ошибка авторизации', 'alert-circle');
+        }
+    }
+
+    // Поиск файла в Drive
+    async function findDriveFile() {
+        if (!driveAuthorized) return;
+
+        try {
+            const response = await gapi.client.drive.files.list({
+                spaces: 'appDataFolder',
+                q: `name='${APP_FILE_NAME}'`,
+                fields: 'files(id, name, createdTime)',
+                pageSize: 1
+            });
+
+            if (response.result.files && response.result.files.length > 0) {
+                driveFileId = response.result.files[0].id;
+                localStorage.setItem('drive_file_id', driveFileId);
+            } else {
+                driveFileId = null;
+                localStorage.removeItem('drive_file_id');
+            }
+        } catch (error) {
+            console.error('Error finding file:', error);
+        }
+    }
+
+    // Создание нового файла
+    async function createDriveFile() {
+        if (!driveAuthorized) return null;
+
+        try {
+            const fileMetadata = {
+                name: APP_FILE_NAME,
+                parents: ['appDataFolder'],
+                mimeType: 'application/json'
+            };
+
+            const initialData = JSON.stringify({
+                version: '1.0',
+                created: new Date().toISOString(),
+                titles: []
+            });
+
+            const form = new FormData();
+            form.append('metadata', new Blob([JSON.stringify(fileMetadata)], { type: 'application/json' }));
+            form.append('file', new Blob([initialData], { type: 'application/json' }));
+
+            const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${driveAccessToken}` },
+                body: form
+            });
+
+            if (!response.ok) throw new Error('Failed to create file');
+
+            const data = await response.json();
+            driveFileId = data.id;
+            localStorage.setItem('drive_file_id', driveFileId);
+            
+            return driveFileId;
+
+        } catch (error) {
+            console.error('Create error:', error);
+            return null;
+        }
+    }
+
+    // Загрузка из Drive
+    async function loadFromDrive() {
+        if (!driveAuthorized || !driveAccessToken || !driveFileId) return null;
+
+        try {
+            const response = await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`, {
+                headers: { 'Authorization': `Bearer ${driveAccessToken}` }
+            });
+
+            if (!response.ok) throw new Error('Failed to download file');
+            return await response.json();
+
+        } catch (error) {
+            console.error('Load error:', error);
+            if (error.status === 404) {
+                driveFileId = null;
+                localStorage.removeItem('drive_file_id');
+            }
+            return null;
+        }
+    }
+
+    // Сохранение в Drive
+    async function saveToDrive(data) {
+        if (!driveAuthorized || !driveAccessToken) return false;
+
+        try {
+            // Если нет файла - создаем
+            if (!driveFileId) {
+                await createDriveFile();
+                if (!driveFileId) return false;
+            }
+
+            const jsonString = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+
+            const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${driveAccessToken}` },
+                body: blob
+            });
+
+            return response.ok;
+
+        } catch (error) {
+            console.error('Save error:', error);
+            return false;
+        }
+    }
+
+    // ==================== УМНАЯ СИНХРОНИЗАЦИЯ ====================
+    
+    // Объединение данных (локальные + из Drive)
+    function mergeData(driveData) {
+        if (!driveData || !driveData.titles) return db;
+        
+        // Создаем Map для быстрого поиска по id
+        const merged = new Map();
+        
+        // Сначала добавляем все из Drive
+        driveData.titles.forEach(item => merged.set(item.id, item));
+        
+        // Потом добавляем/обновляем из локальных (локальные приоритет)
+        db.forEach(item => merged.set(item.id, item));
+        
+        return Array.from(merged.values());
+    }
+
+    // Синхронизация с Drive
+    async function syncWithDrive() {
+        if (!driveAuthorized || isSyncing) return;
+        
+        isSyncing = true;
+        driveDot.className = 'drive-dot sync';
+        
+        try {
+            // Загружаем из Drive
+            const driveData = await loadFromDrive();
+            
+            if (driveData && driveData.titles) {
+                // Объединяем данные
+                const merged = mergeData(driveData);
+                
+                // Проверяем, были ли изменения
+                if (JSON.stringify(merged) !== JSON.stringify(db)) {
+                    db = merged;
+                    saveData();
+                    render();
+                    showToast('Данные синхронизированы', 'cloud');
+                }
+            }
+            
+            // Сохраняем текущие данные в Drive
+            const success = await saveToDrive({
+                version: '1.0',
+                lastSync: new Date().toISOString(),
+                userEmail: driveUser?.email,
+                titles: db
+            });
+            
+            if (success) {
+                // Очищаем очередь синхронизации
+                syncQueue = [];
+                localStorage.removeItem('drive_sync_queue');
+            }
+            
+        } catch (error) {
+            console.error('Sync error:', error);
+        } finally {
+            isSyncing = false;
+            updateDriveStatus();
+        }
+    }
+
+    // Добавление изменения в очередь
+    function queueChange(action, data) {
+        syncQueue.push({
+            action,
+            data,
+            timestamp: Date.now()
+        });
+        localStorage.setItem('drive_sync_queue', JSON.stringify(syncQueue));
+        updateDriveStatus();
+        
+        // Пытаемся синхронизировать сразу
+        if (driveAuthorized) {
+            syncWithDrive();
+        }
+    }
+
+    // ==================== ОСНОВНЫЕ ФУНКЦИИ (ОРИГИНАЛ) ====================
+    
+    function createConfetti() {
+        for (let i = 0; i < 30; i++) {
+            setTimeout(() => {
+                const particle = document.createElement('div');
+                particle.className = 'confetti-particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = '80%';
+                particle.style.background = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                particle.style.width = (Math.random() * 10 + 5) + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.animationDuration = (Math.random() * 1 + 0.8) + 's';
+                document.body.appendChild(particle);
+                setTimeout(() => particle.remove(), 2000);
+            }, i * 50);
+        }
+    }
+
+    function startNewCircle() {
+        document.querySelectorAll('.card').forEach(card => {
+            card.classList.add('new-circle-anim');
+            setTimeout(() => card.classList.remove('new-circle-anim'), 800);
+        });
+        
+        createConfetti();
+        
+        db = db.map(item => {
+            if (item.status === 'watching') {
+                item.locked = false;
+            }
+            return item;
+        });
+        
+        saveData();
+        render();
+        showToast('НОВЫЙ КРУГ! Все карточки разблокированы', 'award');
+    }
+
+    function getUnlockedCount() {
+        return db.filter(x => x.status === 'watching' && !x.locked).length;
+    }
+
+    function saveData() { 
+        localStorage.setItem('at_db_v6', JSON.stringify(db)); 
+        
+        // Добавляем в очередь на синхронизацию
+        queueChange('update', { type: 'full', data: db });
+    }
+
+    function sync() {
+        const r = document.documentElement.style;
+        r.setProperty('--p-accent', config.accent);
+        r.setProperty('--p-panel', config.panel);
+        r.setProperty('--p-blur', config.blur + 'px');
+        
+        const bg = localStorage.getItem('at_bg_v6');
+        if(bg) document.getElementById('bg-layer').style.backgroundImage = `url(${bg})`;
+        
+        if(config.oled) {
+            document.body.classList.add('oled-mode');
+        } else {
+            document.body.classList.remove('oled-mode');
+        }
+        
+        localStorage.setItem('at_cfg_v6', JSON.stringify(config));
+    }
+
+    function showToast(text, icon = 'check-circle') {
+        const container = document.getElementById('toast-container');
+        container.innerHTML = ''; 
+        const t = document.createElement('div');
+        t.className = 'toast';
+        t.innerHTML = `
+            <div class="toast-icon"><i data-lucide="${icon}" size="18"></i></div>
+            <span>${text}</span>
+            <div class="toast-progress"></div>
+        `;
+        container.appendChild(t);
+        lucide.createIcons();
+        setTimeout(() => { 
+            t.classList.add('show'); 
+            t.querySelector('.toast-progress').style.width = '0%'; 
+        }, 10);
+        setTimeout(() => { 
+            t.classList.remove('show'); 
+            setTimeout(() => t.remove(), 500); 
+        }, 3000);
+    }
+
+    function openModal(onConfirm) {
+        const ov = document.getElementById('modal-overlay');
+        const btn = document.getElementById('modal-confirm-btn');
+        ov.style.display = 'flex';
+        setTimeout(() => ov.classList.add('show'), 10);
+        btn.onclick = () => { onConfirm(); closeModal(); };
+    }
+
+    function closeModal() {
+        const ov = document.getElementById('modal-overlay');
+        ov.classList.remove('show');
+        setTimeout(() => ov.style.display = 'none', 300);
+    }
+
+    function render() {
+        const box = document.getElementById('main-list');
+        box.innerHTML = '';
+        let filtered = db.filter(x => x.status === filter);
+        
+        if(filter === 'watching') {
+            filtered.sort((a, b) => {
+                if (a.locked !== b.locked) return a.locked - b.locked;
+                return b.id - a.id;
+            });
+        } else {
+            filtered.reverse();
+        }
+
+        filtered.forEach(i => {
+            const el = document.createElement('div');
+            el.id = `card-${i.id}`;
+            el.className = `card ${i.status} ${i.locked ? 'locked' : ''}`;
+            
+            let progressHtml = '';
+            if(i.limit && i.limit > 0) {
+                const percent = Math.min((i.e / i.limit) * 100, 100);
+                progressHtml = `
+                    <div class="progress-track">
+                        <div class="progress-fill" style="width: ${percent}%"></div>
+                    </div>`;
+            }
+            
+            let btns = '';
+            if(i.status === 'watching') {
+                btns = `
+                <div class="card-btns">
+                    <button class="btn-sm btn-lock" onclick="toggleLock(${i.id}, event)">
+                        <i data-lucide="${i.locked?'check-circle':'circle'}" size="18"></i>
+                    </button>
+                    <button class="btn-sm" onclick="quick(${i.id},-1,event)"><i data-lucide="minus" size="18"></i></button>
+                    <button class="btn-sm main" onclick="quick(${i.id},1,event)"><i data-lucide="plus" size="18"></i></button>
+                </div>`;
+            } else if (i.status === 'waiting') {
+                btns = `<div class="card-btns"><button class="btn-sm main" onclick="quick(${i.id},1,event)"><i data-lucide="plus" size="16"></i></button></div>`;
+            } else if (i.status === 'watched') {
+                btns = `<div class="card-btns"><button class="btn-sm main" onclick="rewatch(${i.id}, event)"><i data-lucide="refresh-cw" size="16"></i></button></div>`;
+            }
+
+            el.innerHTML = `
+                <div class="status-indicator"></div>
+                <div class="card-info" onclick="openUI('edit', ${i.id})">
+                    <h3>${i.name}</h3>
+                    <p>Сезон ${i.s} • Серия ${i.e}${i.limit ? ' / '+i.limit : ''}</p>
+                    ${progressHtml}
+                </div>
+                ${btns}`;
+            
+            if(i.status === 'watching' && !i.locked) bindSwipeGestures(el, i.id);
+            box.appendChild(el);
+        });
+        lucide.createIcons();
+    }
+
+    function bindSwipeGestures(el, id) {
+        let startX = 0, startY = 0, currentX = 0;
+        let isMoving = false, isScrolling = false;
+        
+        el.ontouchstart = e => {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            isMoving = false;
+            isScrolling = false;
+            el.style.transition = 'none';
+        };
+
+        el.ontouchmove = e => {
+            if (isScrolling) return;
+
+            const dx = e.touches[0].clientX - startX;
+            const dy = e.touches[0].clientY - startY;
+
+            if (!isMoving && Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
+                isScrolling = true;
+                return;
+            }
+
+            if (Math.abs(dx) > 10) {
+                isMoving = true;
+                currentX = dx;
+                const opacity = Math.min(Math.abs(currentX) / 150, 0.4);
+                
+                if (currentX > 0) el.style.background = `rgba(50, 215, 75, ${opacity})`;
+                else el.style.background = `rgba(255, 69, 58, ${opacity})`;
+                
+                el.style.transform = `translateX(${currentX}px)`;
+                if (e.cancelable) e.preventDefault();
+            }
+        };
+
+        el.ontouchend = () => {
+            el.style.transition = 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+            if (isMoving) {
+                if (currentX > 100) { 
+                    quick(id, 1); 
+                    showToast('Серия добавлена', 'plus-circle'); 
+                } else if (currentX < -100) { 
+                    quick(id, -1); 
+                    showToast('Серия убрана', 'minus-circle'); 
+                }
+            }
+            el.style.transform = 'translateX(0)';
+            el.style.background = 'var(--p-card)';
+            currentX = 0; isMoving = false;
+        };
+    }
+
+    function quick(id, v, e) {
+        if(e) e.stopPropagation();
+        animateHit(id);
+        db = db.map(i => {
+            if(i.id == id) {
+                if(i.status === 'waiting' && v > 0) { 
+                    i.status = 'watching'; 
+                    showToast('Приятного просмотра!', 'play'); 
+                } else if(!i.locked) { 
+                    i.e = Math.max(1, parseInt(i.e)+v); 
+                }
+                if(i.limit && parseInt(i.e) >= parseInt(i.limit)) { 
+                    i.e = i.limit; 
+                    i.status = 'watched'; 
+                    i.locked = false; 
+                    showToast('Тайтл завершен!', 'award'); 
+                }
+            }
+            return i;
+        });
+        saveData(); 
+        render();
+    }
+
+    function toggleLock(id, e) { 
+        if(e) e.stopPropagation(); 
+        
+        const card = db.find(x => x.id == id);
+        if (!card) return;
+        
+        const unlockedCount = getUnlockedCount();
+        
+        if (!card.locked && unlockedCount === 1) {
+            db = db.map(i => {
+                if (i.id == id) {
+                    i.e = parseInt(i.e) + 1;
+                    i.locked = true;
+                    
+                    if (i.limit && parseInt(i.e) >= parseInt(i.limit)) {
+                        i.e = i.limit;
+                        i.status = 'watched';
+                        i.locked = false;
+                    }
+                }
+                return i;
+            });
+            
+            saveData();
+            render();
+            
+            const updatedCard = db.find(x => x.id == id);
+            if (updatedCard && updatedCard.status !== 'watched') {
+                startNewCircle();
+            }
+            return;
+        }
+        
+        db = db.map(i => { 
+            if(i.id == id) {
+                if(!i.locked) { 
+                    i.e = parseInt(i.e) + 1; 
+                    i.locked = true; 
+                    animateHit(id); 
+                    showToast('Зафиксировано', 'lock'); 
+                } else { 
+                    i.locked = false; 
+                    showToast('Разблокировано', 'unlock'); 
+                }
+                if(i.limit && parseInt(i.e) >= parseInt(i.limit)) { 
+                    i.e = i.limit; i.status = 'watched'; i.locked = false; 
+                }
+            } 
+            return i; 
+        }); 
+        saveData(); 
+        render(); 
+    }
+
+    function rewatch(id, e) {
+        if(e) e.stopPropagation();
+        db = db.map(i => {
+            if(i.id == id) { 
+                i.status = 'watching'; i.e = 1; i.s = 1; i.locked = false; 
+                showToast('Начинаем пересмотр!', 'refresh-cw'); 
+            }
+            return i;
+        });
+        saveData(); 
+        render();
+    }
+
+    function animateHit(id) {
+        const el = document.getElementById(`card-${id}`);
+        if(el) { 
+            el.classList.add('hit-anim'); 
+            setTimeout(() => el.classList.remove('hit-anim'), 300); 
+        }
+    }
+
+    // ==================== УПРАВЛЕНИЕ ИНТЕРФЕЙСОМ ====================
+    
+    function openUI(mode, id = null) {
+        const sheet = document.getElementById('ui-sheet');
+        sheet.style.transform = 'translateY(0)';
+        
+        if(mode === 'studio') {
+            sheet.innerHTML = `
+                <div class="drag-bar"></div>
+                
+                <!-- СТАТУС DRIVE -->
+                <div class="setting-block">
+                    <label>ОБЛАКО GOOGLE DRIVE</label>
+                    <div style="background: rgba(0,0,0,0.3); border-radius: 16px; padding: 16px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: ${driveAuthorized ? '#34A853' : '#5f6368'}; display: flex; align-items: center; justify-content: center;">
+                                <i data-lucide="${driveAuthorized ? 'cloud' : 'cloud-off'}" size="20"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight: 800;">${driveAuthorized ? (driveUser?.email || 'Подключено') : 'Не подключено'}</div>
+                                <div style="font-size: 10px; opacity: 0.6;">${driveAuthorized ? 'Данные синхронизируются' : 'Войдите для синхронизации'}</div>
+                            </div>
+                        </div>
+                        
+                        ${!driveAuthorized ? `
+                            <button class="dev-btn" onclick="openGoogleAuth()" style="width: 100%; background: #4285F4; border: none;">
+                                <i data-lucide="log-in" size="14"></i> ВОЙТИ В GOOGLE DRIVE
+                            </button>
+                        ` : `
+                            <div style="display: flex; gap: 10px;">
+                                <button class="dev-btn" onclick="syncWithDrive()" style="flex: 1;">
+                                    <i data-lucide="refresh-cw" size="14"></i> СИНХР.
+                                </button>
+                                <button class="dev-btn" onclick="signOutFromGoogle()" style="flex: 1;">
+                                    <i data-lucide="log-out" size="14"></i> ВЫЙТИ
+                                </button>
+                            </div>
+                        `}
+                        
+                        ${syncQueue.length > 0 ? `
+                            <div style="margin-top: 10px; padding: 8px; background: rgba(255,214,10,0.1); border-radius: 8px; font-size: 10px;">
+                                ⏳ Ожидает синхронизации: ${syncQueue.length} изменений
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+                
+                <div class="setting-block">
+                    <label>Цвет акцента</label>
+                    <div class="color-row">
+                        ${['#ffffff','#007AFF','#FFD60A','#FF453A','#32D74B','#AF52DE','#FF9F0A','#00D2FF'].map(c => `
+                            <div class="color-dot ${config.accent===c?'active':''}" style="background:${c}" onclick="setCfg('accent','${c}', this)"></div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="setting-block">
+                    <label>Стиль панелей</label>
+                    <div class="color-row">
+                        ${['rgba(15,15,18,0.85)','rgba(40,40,45,0.9)','rgba(0,0,0,0.6)','rgba(30,0,0,0.8)','rgba(10,40,10,0.8)'].map(c => `
+                            <div class="color-dot ${config.panel===c?'active':''}" style="background:${c}" onclick="setCfg('panel','${c}', this)"></div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="setting-block">
+                    <label id="blur-label">Размытие фона: ${config.blur}px</label>
+                    <input type="range" min="0" max="50" value="${config.blur}" oninput="setCfg('blur',this.value)">
+                </div>
+                
+                <button class="input-box" onclick="document.getElementById('bg-picker').click()">СМЕНИТЬ ОБОИ</button>
+                <div class="dev-btn-row">
+                    <button class="dev-btn" onclick="optimizeApp()"><i data-lucide="zap" size="14"></i>ОПТИМИЗАЦИЯ</button>
+                    <button class="dev-btn ${config.oled?'active':''}" onclick="toggleOLED()"><i data-lucide="moon" size="14"></i>OLED</button>
+                </div>
+                <button class="btn-action" onclick="closeUI()">ГОТОВО</button>`;
+        } else if (mode === 'info') {
+            const totalEps = db.reduce((sum, i) => sum + parseInt(i.e), 0);
+            sheet.innerHTML = `
+                <div class="drag-bar"></div>
+                
+                <div class="info-grid">
+                    <div class="info-item"><i data-lucide="layers" size="20"></i><span>Всего серий</span><b>${totalEps}</b></div>
+                    <div class="info-item"><i data-lucide="terminal" size="20"></i><span>Версия</span><b>15.0</b></div>
+                    <div class="info-item"><i data-lucide="cloud" size="20"></i><span>Drive</span><b>${driveAuthorized ? '✅' : '❌'}</b></div>
+                    <div class="info-item"><i data-lucide="film" size="20"></i><span>Тайтлов</span><b>${db.length}</b></div>
+                </div>`;
+        } else {
+            editId = id; 
+            const i = id ? db.find(x => x.id == id) : null;
+            sVal = i ? i.s : 1; 
+            eVal = i ? i.e : 1; 
+            stVal = i ? i.status : filter;
+            
+            sheet.innerHTML = `
+                <div class="drag-bar"></div>
+                <input type="text" id="f-name" class="input-box" placeholder="Название аниме..." value="${i?i.name:''}" onkeypress="handleEnter(event)">
+                <div class="step-container">
+                    <div class="step-card">
+                        <button class="btn-sm" onclick="vUpdate('s',-1)"><i data-lucide="minus" size="16"></i></button>
+                        <div style="text-align:center"><b id="v-s">${sVal}</b><br><span style="font-size:10px;opacity:0.5">СЕЗОН</span></div>
+                        <button class="btn-sm" onclick="vUpdate('s',1)"><i data-lucide="plus" size="16"></i></button>
+                    </div>
+                    <div class="step-card">
+                        <button class="btn-sm" onclick="vUpdate('e',-1)"><i data-lucide="minus" size="16"></i></button>
+                        <div style="text-align:center"><b id="v-e">${eVal}</b><br><span style="font-size:10px;opacity:0.5">СЕРИЯ</span></div>
+                        <button class="btn-sm" onclick="vUpdate('e',1)"><i data-lucide="plus" size="16"></i></button>
+                    </div>
+                </div>
+                <input type="number" id="f-limit" class="input-box" placeholder="Лимит серий" value="${i?.limit || ''}" onkeypress="handleEnter(event)">
+                <div class="filters" style="padding:0; margin-bottom:20px">
+                    <div class="f-item ${stVal==='watching'?'active':''}" onclick="stChange('watching',this)">СМОТРЮ</div>
+                    <div class="f-item ${stVal==='waiting'?'active':''}" onclick="stChange('waiting',this)">ОЖИДАНИЕ</div>
+                    <div class="f-item ${stVal==='watched'?'active':''}" onclick="stChange('watched',this)">АРХИВ</div>
+                </div>
+                <button class="btn-action" onclick="save()">СОХРАНИТЬ</button>
+                ${editId ? `<button onclick="del()" style="width:100%;background:none;border:none;color:#FF453A;font-weight:800;margin-top:20px;font-size:12px;letter-spacing:1px">УДАЛИТЬ ТАЙТЛ</button>` : ''}`;
+        }
+        
+        document.getElementById('ui-overlay').style.display = 'flex';
+        setTimeout(() => { 
+            document.getElementById('ui-overlay').classList.add('show'); 
+            lucide.createIcons(); 
+            bindOverlaySwipe(); 
+        }, 10);
+    }
+
+    function signOutFromGoogle() {
+        google.accounts.id.disableAutoSelect();
+        driveAuthorized = false;
+        driveUser = null;
+        driveAccessToken = null;
+        driveFileId = null;
+        gapi.client.setToken(null);
+        localStorage.removeItem('drive_file_id');
+        updateDriveStatus();
+        showToast('Выход из Google Drive', 'log-out');
+        closeUI();
+    }
+
+    function toggleOLED() {
+        config.oled = !config.oled;
+        sync();
+        showToast(config.oled ? 'OLED режим включен' : 'OLED режим выключен', 'moon');
+    }
+
+    function optimizeApp() {
+        showToast('Оптимизация...', 'loader');
+        setTimeout(() => {
+            sessionStorage.clear();
+            location.reload();
+        }, 1000);
+    }
+
+    function setCfg(k, v, el) { 
+        config[k] = v; 
+        sync(); 
+        if(k === 'blur') {
+            document.getElementById('blur-label').innerText = `Размытие фона: ${v}px`;
+        } else if(el) { 
+            el.parentElement.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active')); 
+            el.classList.add('active'); 
+        } 
+    }
+
+    function save() {
+        const nameInput = document.getElementById('f-name');
+        if(!nameInput) return;
+        const name = nameInput.value.trim().toUpperCase();
+        if(!name) { 
+            showToast('Введите название', 'alert-circle'); 
+            return; 
+        }
+        const entry = { 
+            id: editId || Date.now(), 
+            name, s: sVal, e: eVal, 
+            limit: document.getElementById('f-limit').value, 
+            status: stVal, 
+            locked: editId ? (db.find(x=>x.id==editId)?.locked || false) : false 
+        };
+        if(editId) db = db.map(x => x.id == editId ? entry : x); 
+        else db.push(entry);
+        saveData(); 
+        render(); 
+        closeUI(); 
+        showToast('Сохранено', 'save');
+    }
+
+    function stChange(s, el) { 
+        stVal = s; 
+        document.querySelectorAll('.sheet .f-item').forEach(x => x.classList.remove('active')); 
+        el.classList.add('active'); 
+    }
+
+    function setFilter(f) { 
+        filter = f; 
+        document.querySelectorAll('.app-header .f-item').forEach(x => x.classList.toggle('active', x.dataset.f===f)); 
+        render(); 
+    }
+
+    function vUpdate(t, v) { 
+        if(t==='s') sVal = Math.max(1, sVal+v); 
+        else eVal = Math.max(1, eVal+v); 
+        document.getElementById('v-s').innerText = sVal; 
+        document.getElementById('v-e').innerText = eVal; 
+    }
+
+    function closeUI() { 
+        document.getElementById('ui-overlay').classList.remove('show'); 
+        setTimeout(() => { 
+            document.getElementById('ui-overlay').style.display='none'; 
+        }, 400); 
+    }
+
+    function del() { 
+        openModal(() => { 
+            db = db.filter(x => x.id != editId); 
+            saveData(); 
+            render(); 
+            closeUI(); 
+            showToast('Удалено', 'trash-2'); 
+        }); 
+    }
+
+    function handleEnter(e) { 
+        if (e.key === 'Enter') { 
+            e.preventDefault(); 
+            e.target.blur(); 
+        } 
+    }
+
+    function bindOverlaySwipe() {
+        const s = document.getElementById('ui-sheet'); 
+        let startY = 0;
+        s.ontouchstart = e => { 
+            startY = e.touches[0].clientY; 
+            s.style.transition = 'none'; 
+        };
+        s.ontouchmove = e => { 
+            let d = e.touches[0].clientY - startY; 
+            if(d > 0) s.style.transform = `translateY(${d}px)`; 
+        };
+        s.ontouchend = e => { 
+            s.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)'; 
+            if(e.changedTouches[0].clientY - startY > 150) closeUI(); 
+            else s.style.transform = 'translateY(0)'; 
+        };
+    }
+
+    document.getElementById('bg-picker').onchange = e => { 
+        const r = new FileReader(); 
+        r.onload = () => { 
+            localStorage.setItem('at_bg_v6', r.result); 
+            sync(); 
+            showToast('Обои обновлены', 'image'); 
+        }; 
+        r.readAsDataURL(e.target.files[0]); 
+    };
+
+    // ==================== ЗАПУСК ====================
+    initGoogleAPI();
+    sync(); 
+    render();
+    updateDriveStatus();
+    
+    // Периодическая проверка синхронизации (раз в минуту)
+    setInterval(() => {
+        if (driveAuthorized && syncQueue.length > 0) {
+            syncWithDrive();
+        }
+    }, 60000);
+</script>
+</body>
+</html>
